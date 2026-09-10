@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Farmácia Clara</title>
+    <meta name="description" content="Descreva o que está sentindo para saber quais remédios você pode tomar e quais estão disponíveis de graça no SUS." />
+    <meta property="og:title" content="Farmácia Clara" />
+    <meta property="og:description" content="Descreva o que está sentindo para saber quais remédios você pode tomar e quais estão disponíveis de graça no SUS." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <script>
+      try {
+        var savedTheme = localStorage.getItem('farmacia_clara_theme');
+        if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.classList.add('dark');
+        }
+      } catch (e) {}
+    </script>
+  </head>
+  <body class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 antialiased">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+

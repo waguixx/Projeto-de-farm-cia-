@@ -1,0 +1,11 @@
+{
+  "name": "Farmácia Clara",
+  "description": "Descreva o que está sentindo para saber quais remédios você pode tomar e quais estão disponíveis de graça no SUS.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
