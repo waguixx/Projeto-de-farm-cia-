@@ -1,4 +1,4 @@
-"use strict";
+import {loadState,saveState,clockRolledBack} from './save';
 const $=id=>document.getElementById(id);
 const app=$('app'),cv=$('c'),ctx=cv.getContext('2d');
 const W=360,PPM=20,SKY=210,TIPX=180,BOATX=118;
@@ -48,10 +48,10 @@ const SCENES=[
  {id:'rio',name:'Rio',cost:0,mult:1,sky:'#8fd3ff',water:['#4cc7cc','#08343d'],wall:'#1d4a3a',cut:'eel',steal:'piranha',cutName:'enguias elétricas',stealName:'piranhas',
   fish:[F('lambari','Lambari',0,5,28,13,'#c9d6dc','#ffb347','#f4f8fa'),F('tilapia','Tilápia',15,12,36,20,'#8fa7b3','#4f6b78','#e4edf0','stripes'),F('pacu','Pacu',40,30,38,29,'#6f8793','#3e5560','#f0625a'),F('tucunare','Tucunaré',80,70,48,22,'#c3cf3a','#ff7a3d','#fff6c2','stripes'),F('pirarucu','Pirarucu',130,160,68,22,'#5f7a61','#c62828','#f1a39b','spots')],
   leg:F('jau','Jaú Gigante',200,3000,104,42,'#7a6450','#44342a','#e1cfb1','whiskers spots')},
- {id:'mar',name:'Mar',cost:3000,mult:6,sky:'#ff9e6b',water:['#2b9fdc','#04173a'],wall:'#3a2f66',cut:'jelly',steal:'shark',cutName:'águas-vivas',stealName:'tubarões',
+ {id:'mar',name:'Mar',cost:11000,mult:6,sky:'#ff9e6b',water:['#2b9fdc','#04173a'],wall:'#3a2f66',cut:'jelly',steal:'shark',cutName:'águas-vivas',stealName:'tubarões',
   fish:[F('sardinha','Sardinha',0,30,28,12,'#9db8d9','#4d6f9c','#f1f6fb'),F('robalo','Robalo',15,80,42,19,'#9db39a','#566b55','#f2f5ee'),F('atum','Atum',40,200,52,26,'#3567b0','#ffc928','#e6f1fb'),F('espada','Peixe-espada',80,450,58,20,'#5a69c4','#273590','#e9ebf8','bill'),F('marlim','Marlim-azul',130,1000,68,24,'#1572d3','#0a3f96','#e3f1fd','bill stripes')],
   leg:F('peixelua','Peixe-lua Real',200,20000,84,74,'#8fa3b8','#56687c','#eef3f7','spots')},
- {id:'gelo',name:'Gelo',cost:450000,mult:36,sky:'#123a66',water:['#3f8fb5','#050f2a'],wall:'#9fd6ee',cut:'jellyice',steal:'seal',cutName:'águas-vivas polares',stealName:'focas',
+ {id:'gelo',name:'Gelo',cost:280000,mult:36,sky:'#123a66',water:['#3f8fb5','#050f2a'],wall:'#9fd6ee',cut:'jellyice',steal:'seal',cutName:'águas-vivas polares',stealName:'focas',
   fish:[F('bacalhau','Bacalhau',0,180,40,19,'#a4897c','#6a4a3d','#f1e8e3','spots'),F('salmao','Salmão',15,450,48,21,'#ff8259','#b9350d','#ffe3d8','spots'),F('linguado','Linguado',40,1100,46,26,'#bda985','#86685b','#eadfc8','flat spots'),F('lanterna','Peixe-lanterna',80,2500,42,28,'#51447a','#2a2145','#8a7bb8','lantern'),F('lula','Lula gigante',130,6000,62,26,'#ee6b6b','#b92525','#ffd0d0','squid')],
   leg:F('narval','Narval',200,120000,104,34,'#a9bac6','#6c7f8c','#f3f7fa','horn spots')},
  {id:'abismo',name:'Abismo',cost:30000000,mult:220,sky:'#2b1645',water:['#25508f','#01030d'],wall:'#1a1033',cut:'jellydeep',steal:'shark2',cutName:'águas-vivas abissais',stealName:'tubarões-duende',
@@ -86,18 +86,22 @@ const weekend=()=>{const d=new Date().getDay();return d===0||d===6;};
 const MESES=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
 /* ================= ESTADO ================= */
+/* Números da economia ajustados com o robô (tools/sim.mjs). */
+const ECO={offEff:.35,offHours:4,pearlDiv:2e5,pearlExp:.42,pearlBonus:.1};
 const UP0={rod:0,sink:0,reel:0,hook:0,line:0,boat:0,motor:0};
 let S={coins:0,scene:0,unlocked:[true,false,false,false],up:Object.assign({},UP0),album:{},casts:0,missions:null,last:Date.now(),mute:false,
   best:{cast:0,depth:0,fish:0,combo:0,legend:0},x2:false,chestAt:0,streak:{day:'',n:0},skin:0,skins:[true,false,false,false,false,false],
-  tut:false,tut2:false,starter:false,starterSeen:false,piggy:0,rank:0,pearls:0,earned:0,lastDbl:-9,noads:false,pass:null,daily:null};
-function load(){try{const j=JSON.parse(localStorage.getItem('pesca-arcade-v1'));if(j){const d=S;S=Object.assign({},d,j);S.up=Object.assign({},UP0,j.up||{});S.best=Object.assign({},d.best,j.best||{});S.streak=Object.assign({},d.streak,j.streak||{});
-  if(!Array.isArray(S.skins))S.skins=d.skins;while(S.skins.length<SKINS.length)S.skins.push(false);
-  if(!Array.isArray(S.unlocked))S.unlocked=d.unlocked;while(S.unlocked.length<SCENES.length)S.unlocked.push(false);
-  if(S.scene>=SCENES.length)S.scene=0;if(j.tut===undefined&&S.casts>0)S.tut=true;if(j.tut2===undefined&&S.casts>0)S.tut2=true;if(j.rank===undefined)S.rank=rankOf(S.best.fish);}}catch(e){}}
-function save(){S.last=Date.now();try{localStorage.setItem('pesca-arcade-v1',JSON.stringify(S));}catch(e){}}
-const pm=()=>1+.1*(S.pearls||0);
+  tut:false,tut2:false,starter:false,starterSeen:false,piggy:0,rank:0,pearls:0,earned:0,lastDbl:-9,noads:false,pass:null,daily:null,
+  maxT:0,ach:{},stats:{gold:0,junk:0,shocks:0,stolen:0,bosses:0,bossFail:0,full:0,clean:0,ads:0,shares:0,sec:0,spent:0,cuts:0},cfg:{music:true,sfx:true,vib:true,lowfx:false},week:null,prestiges:0};
+let loadStatus='novo';
+function load(){const r=loadState(S,{scenes:SCENES.length,skins:SKINS.length,upMax:Object.fromEntries(UPS.map(u=>[u.k,u.max])),fishIds:Object.keys(FISH),missionTypes:['fish','depth','total','gold','full','combo']});
+  S=r.state;loadStatus=r.status;if(S.rank<0)S.rank=rankOf(S.best.fish);}
+let saveFailed=false;
+function save(){const ok=saveState(S);if(!ok&&!saveFailed){saveFailed=true;setTimeout(()=>banner('<b>Sem espaço para salvar</b>Libere espaço no aparelho para não perder o progresso.',5000),300);}if(ok)saveFailed=false;}
+const timeOk=()=>!clockRolledBack(S);
+const pm=()=>1+ECO.pearlBonus*(S.pearls||0);
 const rate=()=>S.up.boat*.6*(1+.35*S.up.motor)*SCENES[S.scene].mult*pm();
-const pearlGain=()=>Math.floor(Math.sqrt((S.earned||0)/40000));
+const pearlGain=()=>Math.floor(Math.pow((S.earned||0)/ECO.pearlDiv,ECO.pearlExp));
 function fmt(n){n=Math.floor(n);if(n<1e4)return String(n);const u=['K','M','B','T','Q'];let i=-1;while(n>=1000&&i<u.length-1){n/=1000;i++;}return (n<100?n.toFixed(1):Math.round(n))+u[i];}
 
 /* ================= SOM E MÚSICA ================= */
@@ -172,8 +176,8 @@ function missionProgress(caught,maxM,full,combo){
   }
   return msgs;
 }
-const chestReady=()=>Date.now()>=(S.chestAt||0);
-const dailyReady=()=>S.streak.day!==dkey();
+const chestReady=()=>timeOk()&&Date.now()>=(S.chestAt||0);
+const dailyReady=()=>timeOk()&&S.streak.day!==dkey();
 const dailyN=()=>S.streak.day===dkey(-1)?(S.streak.n%7)+1:1;
 const chestAmt=()=>Math.max(150,ru());
 const dailyAmt=n=>Math.max(200,Math.round(ru()*(.5+.5*n)));
@@ -802,7 +806,7 @@ function render(){
       return'<div class="row">'+icon(u.ic)+'<div class="inf"><b>'+u.name+'</b><small>Nv '+l+'</small><div class="d">'+u.label+': '+u.val(l)+(mx?'':' → '+u.val(l+1))+'</div></div><button class="btn" data-act="buy" data-k="'+u.k+'" '+(mx||lock||S.coins<c?'disabled':'')+'>'+(mx?'MÁX':lock?'Precisa de barco':fmt(c))+'</button></div>';}).join('')
       +'<h3>Visual do barco</h3>'+SKINS.map((s,i)=>'<div class="row"><div class="sw" style="background:linear-gradient('+shade(s.hull,.15)+','+s.hull+' 60%,'+s.trim+' 60%)"></div><div class="inf"><b>'+s.n+'</b><div class="d">'+(S.skins[i]?'Você já tem':s.cost<0?'Prêmio do passe premium':'Só visual, para se exibir')+'</div></div>'+
         (S.skin===i?'<button class="btn g" disabled>Em uso</button>':S.skins[i]?'<button class="btn g" data-act="skin" data-i="'+i+'">Usar</button>':s.cost<0?'<button class="btn" disabled>Passe</button>':'<button class="btn" data-act="skin" data-i="'+i+'" '+(S.coins<s.cost?'disabled':'')+'>'+fmt(s.cost)+'</button>')+'</div>').join('')
-      +'<div class="note">Barcos auxiliares pescam sozinhos, até com o jogo fechado (máx. 4 h). O barco, a vara, a linha e o anzol mudam de aparência conforme evoluem.</div>';}
+      +'<div class="note">Barcos auxiliares pescam sozinhos, até com o jogo fechado (por até 4 h, rendendo 35% do normal). O barco, a vara, a linha e o anzol mudam de aparência conforme evoluem.</div>';}
   else if(panel==='album'){T.textContent='Álbum';
     let tot=0,got=0;const cardOf=(f,leg)=>{const a=S.album[f.id];tot++;if(a)got++;
       return'<div class="card'+(leg?' leg':'')+'"><canvas data-fish="'+f.id+'" width="168" height="112"></canvas>'+(a?f.name+(a.g?' ★':''):'???')+'<small>'+(a?a.n+'×'+(a.g?' · '+a.g+' dourado'+(a.g>1?'s':''):''):f.junk?'achado raro':(leg?'chefão · ':'')+'a partir de '+f.min+' m')+'</small></div>';};
@@ -837,7 +841,7 @@ function render(){
       +'<div class="warn"><b>Compra de teste:</b> nada será cobrado. Você recebe o item para experimentar a economia do jogo.</div>'
       +'<button class="btn g big" data-act="confirm">Receber (teste, sem cobrança)</button><button class="btn gray big" data-act="back">Voltar</button>';}
   else if(panel==='gift'){T.textContent='Presentes';const cr=chestReady(),dr=dailyReady(),n=dr?dailyN():S.streak.n;
-    b.innerHTML='<div class="row">'+icon('chest')+'<div class="inf"><b>Baú grátis</b><div class="d">'+(cr?'+'+fmt(chestAmt())+' moedas esperando por você':'Volta em '+hms(S.chestAt-Date.now()))+'</div></div>'+(cr?'<button class="btn g" data-act="chest">Abrir</button>':'<button class="btn p" data-act="chestad">'+(S.noads?'Abrir já':'Vídeo: abrir já')+'</button>')+'</div>'
+    b.innerHTML='<div class="row">'+icon('chest')+'<div class="inf"><b>Baú grátis</b><div class="d">'+(cr?'+'+fmt(chestAmt())+' moedas esperando por você':(timeOk()?'Volta em '+hms(S.chestAt-Date.now()):'Relógio do aparelho alterado: aguarde o horário voltar ao normal'))+'</div></div>'+(cr?'<button class="btn g" data-act="chest">Abrir</button>':'<button class="btn p" data-act="chestad">'+(S.noads?'Abrir já':'Vídeo: abrir já')+'</button>')+'</div>'
       +'<h3>Bônus diário</h3><div class="days">'+[1,2,3,4,5,6,7].map(d=>'<div class="'+(d<n||(!dr&&d===n)?'ok':'')+(dr&&d===n?' now':'')+'">Dia '+d+'<br>'+fmt(dailyAmt(d))+'</div>').join('')+'</div>'
       +'<button class="btn g big" data-act="daily" '+(dr?'':'disabled')+'>'+(dr?'Pegar bônus do dia '+n+' (+'+fmt(dailyAmt(n))+')':'Volte amanhã para o próximo')+'</button>'
       +'<div class="note">Entre todos os dias seguidos para chegar ao prêmio do dia 7. Os vídeos estão em modo teste.</div>';}
@@ -916,22 +920,39 @@ window.addEventListener('keydown',e=>{if(e.key==='ArrowLeft')keys.l=true;else if
 window.addEventListener('keyup',e=>{if(e.key==='ArrowLeft')keys.l=false;else if(e.key==='ArrowRight')keys.r=false;});
 
 /* ================= INÍCIO ================= */
-function resize(){const r=app.getBoundingClientRect();DPR=Math.min(window.devicePixelRatio||1,2);cv.width=Math.round(r.width*DPR);cv.height=Math.round(r.height*DPR);SCALE=r.width/W;H=r.height/SCALE;}
-window.addEventListener('resize',resize);
-document.addEventListener('visibilitychange',()=>{if(document.hidden){save();try{if(AC)AC.suspend();}catch(e){}}else{lastT=0;try{if(AC&&MUS.master&&!S.mute)AC.resume();}catch(e){}}});
+function resize(){
+  const vw=window.innerWidth,vh=window.innerHeight;
+  // largura do jogo: nunca mais larga que 560 px e sempre com proporção jogável (retrato), mesmo em tablet ou paisagem
+  const w=Math.max(200,Math.min(vw,560,vh*360/540));app.style.width=w+'px';
+  const r=app.getBoundingClientRect();DPR=Math.min(window.devicePixelRatio||1,S.cfg&&S.cfg.lowfx?1.25:2);cv.width=Math.round(r.width*DPR);cv.height=Math.round(r.height*DPR);SCALE=r.width/W;H=r.height/SCALE;
+  app.style.setProperty('--s',Math.min(1.35,Math.max(.82,SCALE)).toFixed(3));
+}
+window.addEventListener('resize',resize);window.addEventListener('orientationchange',()=>setTimeout(resize,200));
+/* Ganho dos barcos enquanto o jogo esteve fechado ou em segundo plano (máx. 4 h). */
+function awayGain(since,quiet){const now=Date.now();
+  if(!timeOk()||now+60000<since){if(!quiet)setTimeout(()=>banner('<b>Relógio alterado</b>Bônus de tempo pausados até o horário voltar ao normal.',3800),600);return;}
+  if((S.chestAt||0)>now+3*3600*1000)S.chestAt=now+3*3600*1000;
+  const el=Math.min(ECO.offHours*3600,(now-since)/1000),gain=rate()*el*ECO.offEff;if(el>60&&gain>=1){S.coins+=gain;S.earned=(S.earned||0)+gain;setTimeout(()=>banner('<b>+'+fmt(gain)+' moedas</b>Seus barcos pescaram enquanto você estava fora!',4000),600);}}
+let hiddenAt=0,paused=false;
+function setPaused(p){paused=p;$('pause').style.display=p?'flex':'none';lastT=0;}
+function onHide(){if(hiddenAt)return;hiddenAt=Date.now();if(G.phase!=='idle'&&!adOn)setPaused(true);save();try{if(AC)AC.suspend();}catch(e){}}
+function onShow(){if(!hiddenAt)return;const since=hiddenAt;hiddenAt=0;lastT=0;awayGain(since,true);updateHud();try{if(AC&&MUS.master&&!S.mute)AC.resume();}catch(e){}}
+document.addEventListener('visibilitychange',()=>{document.hidden?onHide():onShow();});
+window.addEventListener('pagehide',()=>{onHide();});window.addEventListener('pageshow',()=>{if(!document.hidden)onShow();});
+$('pause').addEventListener('click',()=>setPaused(false));
 let lastT=0;
 function frame(ts){
+  if(window.__simMode){requestAnimationFrame(frame);return;}
   const dt=lastT?Math.min(.05,(ts-lastT)/1000):0;lastT=ts;
-  try{if(!adOn){if(G.rev>0){G.rev-=dt;$('revbar').style.width=Math.max(0,G.rev/5*100)+'%';if(G.rev<=0){G.rev=0;$('rev').style.display='none';lineCut();}}update(dt);}draw();}catch(err){console.error(err);}
+  try{if(!adOn&&!paused){if(G.rev>0){G.rev-=dt;$('revbar').style.width=Math.max(0,G.rev/5*100)+'%';if(G.rev<=0){G.rev=0;$('rev').style.display='none';lineCut();}}update(dt);}draw();}catch(err){console.error(err);}
   requestAnimationFrame(frame);
 }
 load();ensureMissions();genEnts();
-(function offline(){const now=Date.now();
-  if(now+60000<S.last){S.chestAt=Math.max(S.chestAt||0,now+3*3600*1000);setTimeout(()=>banner('<b>Relógio alterado</b>Bônus de tempo pausados desta vez.',3500),600);return;}
-  if((S.chestAt||0)>now+3*3600*1000)S.chestAt=now+3*3600*1000;
-  const el=Math.min(4*3600,(now-S.last)/1000),gain=rate()*el;if(el>60&&gain>=1){S.coins+=gain;S.earned=(S.earned||0)+gain;setTimeout(()=>banner('<b>+'+fmt(gain)+' moedas</b>Seus barcos pescaram enquanto você estava fora!',4000),600);}})();
+awayGain(S.last,false);
+if(loadStatus==='recuperado')setTimeout(()=>banner('<b>Progresso recuperado</b>O save estava danificado e usamos a cópia de segurança.',4500),900);
+else if(loadStatus==='reiniciado')setTimeout(()=>banner('<b>Save danificado</b>Não foi possível recuperar o progresso anterior.',4500),900);
 resize();updateHud();save();requestAnimationFrame(frame);
 
 /* ================= GANCHO DE TESTE (prints, robô de economia) ================= */
-window.__pesca={get S(){return S;},set S(v){S=v;},G,P,update,draw,startCast,goUp,finish,genEnts,openPanel,closePanel,render,updateHud,save,SCENES,UPS,FISH,cost,cap,depthMax,timeMax,vDown,vUp,rate,pearlGain,startDuel,shock,
+window.__pesca={get S(){return S;},set S(v){S=v;},G,P,update,draw,startCast,goUp,finish,genEnts,openPanel,closePanel,render,updateHud,save,SCENES,UPS,FISH,cost,cap,depthMax,timeMax,vDown,vUp,rate,pearlGain,ECO,startDuel,shock,duelTap,chestAmt,dailyAmt,doPrestige,fmt,ensureMissions,
   get panel(){return panel;},get adOn(){return adOn;},W,PPM,get H(){return H;}};
