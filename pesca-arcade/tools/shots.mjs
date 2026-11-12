@@ -50,7 +50,7 @@ const medir = () => ev(() => new Promise(res => { let n = 0; const t0 = performa
 console.log('desempenho (PC de teste):', JSON.stringify(await medir()));
 const cdp = await page.context().newCDPSession(page); await cdp.send('Emulation.setCPUThrottlingRate', { rate: 4 });
 await ev(() => { __pesca.closeResult(); __pesca.closeResult(); if (__pesca.G.phase === 'idle') { __pesca.genEnts(); __pesca.startCast(); } });
-console.log('desempenho (CPU 4x mais lenta, simulando celular médio):', JSON.stringify(await medir()));
+console.log('desempenho (CPU 4x mais lenta e SEM GPU: pior caso do renderizador por software, não equivale a um celular real):', JSON.stringify(await medir()));
 console.log(errors.length ? 'ERROS DE CONSOLE:\n' + errors.join('\n') : 'console: sem erros');
 await browser.close(); srv.close();
 process.exit(errors.length ? 1 : 0);

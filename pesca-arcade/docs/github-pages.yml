@@ -1,0 +1,32 @@
+# Exemplo de publicação automática no GitHub Pages.
+# Copie este arquivo para .github/workflows/pesca-arcade.yml no repositório do jogo
+# e, em Settings > Pages, escolha "Source: GitHub Actions".
+name: Publicar Pesca Arcade
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    defaults:
+      run:
+        working-directory: pesca-arcade   # apague esta linha se o jogo estiver na raiz do repositório
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - run: npm run build
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: pesca-arcade/dist           # use "dist" se o jogo estiver na raiz
+      - id: deployment
+        uses: actions/deploy-pages@v4

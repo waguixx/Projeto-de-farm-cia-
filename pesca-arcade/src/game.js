@@ -903,7 +903,7 @@ let lastMute=null;
 function updateHud(){$('coins').textContent=fmt(S.coins);const r=rate();$('rate').innerHTML=(S.pearls?'⦿ +'+Math.round((pm()-1)*100)+'%<br>':'')+(S.x2?'x2 ':'')+(r?'+'+(r<10?r.toFixed(1):fmt(r))+'/s':'');
   ensureMissions();ensureDaily();$('mdot').style.display=S.missions.list.some(m=>!m.done)?'block':'none';$('gdot').style.display=chestReady()||dailyReady()?'block':'none';$('ddot').style.display=S.daily.tries<3?'block':'none';}
 let panel=null,pend=null;
-function openPanel(p){panel=p;render();$('modal').classList.add('on');snd('ui');}
+function openPanel(p){panel=p;render();$('mbody').scrollTop=0;$('modal').classList.add('on');snd('ui');}
 function closePanel(){panel=null;$('modal').classList.remove('on');}
 function hms(ms){const s=Math.max(0,Math.ceil(ms/1000)),h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return(h?h+'h ':'')+String(m).padStart(2,'0')+'m '+String(x).padStart(2,'0')+'s';}
 const scBadge=s=>'<div class="ic sc" style="background:linear-gradient('+s.sky+' 0 44%,'+s.water[0]+' 44%,'+s.water[1]+')"></div>';
@@ -937,6 +937,7 @@ function render(){
       +'<div class="note">'+(S.unlocked[2]?'Quanto mais moedas você junta antes de aposentar, mais pérolas ganha.':'Libere o Gelo para poder aposentar o barco.')+'</div>';}
   else if(panel==='prest'){T.textContent='Aposentar o barco';const pg=pearlGain();
     b.innerHTML='<div class="row gold">'+icon('pearl')+'<div class="inf"><b>+'+pg+' pérola'+(pg==1?'':'s')+'</b><div class="d">Total depois: '+((S.pearls||0)+pg)+' pérolas = +'+(((S.pearls||0)+pg)*10)+'% em tudo</div></div></div>'
+      +(pg<5?'<div class="warn"><b>Ainda é cedo.</b> Com menos de 5 pérolas a nova volta demora quase o mesmo que a primeira. Junte mais moedas (o Abismo ajuda muito) antes de aposentar.</div>':'')
       +'<div class="warn">Você volta para o Rio com 0 moedas e sem melhorias. Mantém: álbum, visuais de barco, recordes, títulos, passe e pérolas.</div>'
       +'<button class="btn p big" data-act="prestok">Aposentar e ganhar pérolas</button><button class="btn gray big" data-act="scenes">Voltar</button>';}
   else if(panel==='coins'){T.textContent='Loja de moedas';const pg=S.piggy||0;
