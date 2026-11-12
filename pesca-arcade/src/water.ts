@@ -88,7 +88,11 @@ export class Water {
 
   setEnabled(on: boolean) { if (!on) { this.ok = false; this.cv.style.display = 'none'; } else if (!this.ok) this.init(); }
 
+  private lw = 0; private lh = 0;
+  /** Reduz a resolução do shader (usado quando o aparelho não aguenta 60 fps). */
+  setQuality(q: number) { this.quality = q; if (this.lw) this.resize(this.lw, this.lh); }
   resize(cssW: number, cssH: number) {
+    this.lw = cssW; this.lh = cssH;
     const w = Math.max(64, Math.round(cssW * this.quality)), h = Math.max(64, Math.round(cssH * this.quality));
     if (this.cv.width !== w || this.cv.height !== h) { this.cv.width = w; this.cv.height = h; }
   }

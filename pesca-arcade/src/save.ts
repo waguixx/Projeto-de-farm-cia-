@@ -80,6 +80,8 @@ export function sanitize(j: Obj, def: Obj, lim: Limits): Obj {
   S.cfg = { music: bool(cf.music, true), sfx: bool(cf.sfx, true), vib: bool(cf.vib, true), lowfx: bool(cf.lowfx, false) };
   S.week = null; if (isObj(j.week) && typeof j.week.k === 'string') S.week = { k: str(j.week.k), p: int(j.week.p), got: bool(j.week.got) };
   S.prestiges = int(j.prestiges);
+  const it = isObj(j.items) ? j.items : {};
+  S.items = { isca: int(it.isca, 0, 0, 999), ima: int(it.ima, 0, 0, 999), escudo: int(it.escudo, 0, 0, 999) };
   return S;
 }
 

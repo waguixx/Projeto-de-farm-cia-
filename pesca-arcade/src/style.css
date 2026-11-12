@@ -135,3 +135,8 @@ textarea{width:100%;border-radius:12px;border:2px solid #cfe6ee;padding:8px;font
 .note a{color:#0b7fa3}
 button:focus-visible{outline:3px solid #ffa000;outline-offset:2px}
 @media (prefers-reduced-motion:reduce){.logo,#play,.dot,#dbl{animation:none}}
+
+.two{display:flex;flex-direction:column;gap:5px;flex:none}
+.two .btn{padding:5px 10px;min-height:36px;font-size:13px}
+.row.off{opacity:.72}
+.rw{color:#e08a00;font:400 15px "Lilita One",Fredoka,sans-serif;flex:none}

@@ -16,9 +16,10 @@ const v1 = { coins: 12345.6, scene: 1, unlocked: [true, true, false, false], up:
   tut: true, tut2: true, starter: false, starterSeen: true, piggy: 300, rank: 2, pearls: 1, earned: 50000, lastDbl: 50, noads: false, pass: null, daily: null };
 await run('save v1', v1, async p => {
   const s = await S(p);
-  check('v1: moedas mantidas (+ ganho offline dos barcos)', s.coins >= 12345 && s.coins < 12345 + 60 * 60 * 30, String(s.coins));
+  check('v1: moedas mantidas (+ ganho offline e conquistas)', s.coins >= 12345 && s.coins < 12345 + 60000, String(s.coins));
   check('v1: mar, melhorias, álbum, pérolas e visual mantidos', s.scene === 1 && s.up.rod === 6 && s.album.lambari.n === 30 && s.pearls === 1 && s.skin === 1 && s.best.fish === 160);
-  check('v1: campos novos criados', s.v === 2 && typeof s.stats === 'object' && s.cfg.music === true);
+  check('v1: campos novos criados', s.v === 2 && typeof s.stats === 'object' && s.cfg.music === true && s.items.isca === 0);
+  check('v1: conquistas antigas reconhecidas na primeira abertura', Object.keys(s.ach).length >= 5, Object.keys(s.ach).join(','));
 });
 await run('json corrompido sem cópia', '{"coins":12,"up":{"rod":', async p => {
   const s = await S(p); check('corrompido: começa jogo novo sem travar', s.coins === 0 && s.casts === 0);
@@ -36,14 +37,15 @@ await run('cópia de segurança', v1, async p => {
   await p.reload(); await p.waitForFunction(() => !!window.__pesca);
   const s = await S(p); check('principal corrompido: recupera a cópia', Math.floor(s.coins) >= 777777 && s.up.rod === 6, String(s.coins));
 });
-await run('relógio para trás', { ...v1, last: Date.now() + 5 * 864e5, maxT: Date.now() + 5 * 864e5, chestAt: 0 }, async p => {
+const semConquistas = Object.fromEntries('f100 f1k f10k d50 d150 d300 c5 c10 g1 g50 b1 b4 j1 jall full20 clean25 mar gelo abismo alb1 alball p1 st7 boats share'.split(' ').map(k => [k, 1])); // já premiadas, para medir só o relógio
+await run('relógio para trás', { ...v1, ach: semConquistas, last: Date.now() + 5 * 864e5, maxT: Date.now() + 5 * 864e5, chestAt: 0 }, async p => {
   const s = await S(p);
   check('relógio alterado: sem ganho offline', Math.abs(s.coins - 12345.6) < 5, String(s.coins));
   check('relógio alterado: baú e bônus diário pausados', await p.evaluate(() => { __pesca.openPanel('gift'); const h = document.getElementById('mbody').innerHTML; return /Relógio do aparelho alterado/.test(h) && /Volte amanhã/.test(h); }));
 });
-await run('relógio muito para frente', { ...v1, last: Date.now() - 400 * 864e5 }, async p => {
+await run('relógio muito para frente', { ...v1, ach: semConquistas, last: Date.now() - 400 * 864e5 }, async p => {
   const s = await S(p); const r = await p.evaluate(() => __pesca.rate());
-  check('ausência longa: ganho offline limitado a 4 h', s.coins - 12345.6 <= r * 4 * 3600 * 0.35 + 5, (s.coins - 12345.6).toFixed(0) + ' de no máx. ' + (r * 4 * 3600).toFixed(0));
+  check('ausência longa: ganho offline limitado a 4 h', s.coins - 12345.6 <= r * 4 * 3600 * 0.35 + 5, (s.coins - 12345.6).toFixed(0) + ' de no máx. ' + (r * 4 * 3600 * 0.35).toFixed(0));
 });
 for (const [w, h] of [[320, 480], [360, 640], [412, 915], [768, 1024], [915, 412], [1280, 720]]) {
   await run(`tela ${w}x${h}`, v1, async p => {

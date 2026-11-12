@@ -25,7 +25,8 @@ for (let i = 0; i < 4; i++) {
   await ev(() => __pesca.startCast()); await wait(1700); await shot(`2${i}-${seas[i]}-descida`);
   await wait(2600); await shot(`3${i}-${seas[i]}-fundo`);
   if (i === 0) { await ev(() => { const p = __pesca, G = p.G; const e = G.ents.find(e => e.kind === 'cut' && !e.dead) || {}; e.x = G.hx; e.y = G.hy; p.shock(e); }); await wait(120); await shot('40-choque'); }
-  if (i === 1) { await ev(() => { const p = __pesca, G = p.G, s = p.SCENES[p.S.scene]; const e = { kind: 'fish', def: s.leg, legend: true, gold: false, val: s.leg.val, x: G.hx, y: G.hy + 30, vx: 0, base: 110, r: 30, ph: 0, z: 1, face: 1 }; G.ents.push(e); p.startDuel(e); }); await wait(900); await shot('41-chefao'); await ev(() => { __pesca.G.duel && (__pesca.G.duel.t = 0); }); await wait(300); }
+  { await ev(() => { const p = __pesca, G = p.G, s = p.SCENES[p.S.scene]; const e = { kind: 'fish', def: s.leg, legend: true, gold: false, val: s.leg.val, x: G.hx, y: G.hy + 30, vx: 0, base: 110, r: 30, ph: 0, z: 1, face: 1 }; G.ents.push(e); p.startDuel(e); });
+    await wait(i === 3 ? 500 : 1100); await shot(`41-chefao-${seas[i]}`); await ev(() => { __pesca.G.duel && (__pesca.G.duel.t = 0); }); await wait(300); }
   await ev(() => __pesca.goUp()); await wait(900); await shot(`5${i}-${seas[i]}-subida`);
   await page.waitForFunction(() => __pesca.G.phase === 'idle', null, { timeout: 60000 });
   await wait(900); if (i === 0) await shot('60-resultado');
@@ -40,12 +41,16 @@ for (const p of ['shop', 'album', 'missions', 'scenes', 'coins', 'gift', 'desafi
   if (p === 'album' || p === 'shop') { await ev(() => { const b = document.getElementById('mbody'); b.scrollTop = b.scrollHeight; }); await wait(250); await shot(`7-menu-${p}-fim`); }
   await ev(() => __pesca.closePanel());
 }
-// fps e custo por quadro durante uma descida
+// cartão de compartilhamento (imagem 1080x1350 gerada em canvas)
+{ const { writeFile } = await import('node:fs/promises');
+  for (const k of ['record', 'daily']) { const d = await ev(k => __pesca.buildCard(k).cvs.toDataURL('image/png'), k); await writeFile(`${OUT}/80-cartao-${k}.png`, Buffer.from(d.split(',')[1], 'base64')); console.log('print', '80-cartao-' + k); } }
+// desempenho: quadros por segundo do laço real do jogo e custo de CPU do desenho, numa descida no Mar
 await ev(() => { __pesca.S.scene = 1; __pesca.genEnts(); __pesca.startCast(); });
-const perf = await ev(() => new Promise(res => { let n = 0, t0 = performance.now(), worst = 0, last = t0; const p = __pesca; let cpu = 0;
-  const f = ts => { const a = performance.now(); p.draw(); cpu += performance.now() - a; worst = Math.max(worst, a - last); last = a; n++; if (a - t0 < 3000) requestAnimationFrame(f); else res({ fps: +(n / ((a - t0) / 1000)).toFixed(1), drawMs: +(cpu / n).toFixed(2), worstGapMs: +worst.toFixed(1) }); };
-  requestAnimationFrame(f); }));
-console.log('desempenho (descida no Mar):', JSON.stringify(perf));
+const medir = () => ev(() => new Promise(res => { let n = 0; const t0 = performance.now(); const f = () => { n++; const a = performance.now(); if (a - t0 < 3000) requestAnimationFrame(f); else { const p = __pesca; const b = performance.now(); for (let i = 0; i < 120; i++) { p.update(1 / 600); p.draw(); } res({ fps: +(n / ((a - t0) / 1000)).toFixed(1), cpuMsPorQuadro: +((performance.now() - b) / 120).toFixed(2) }); } }; requestAnimationFrame(f); }));
+console.log('desempenho (PC de teste):', JSON.stringify(await medir()));
+const cdp = await page.context().newCDPSession(page); await cdp.send('Emulation.setCPUThrottlingRate', { rate: 4 });
+await ev(() => { __pesca.closeResult(); __pesca.closeResult(); if (__pesca.G.phase === 'idle') { __pesca.genEnts(); __pesca.startCast(); } });
+console.log('desempenho (CPU 4x mais lenta, simulando celular médio):', JSON.stringify(await medir()));
 console.log(errors.length ? 'ERROS DE CONSOLE:\n' + errors.join('\n') : 'console: sem erros');
 await browser.close(); srv.close();
 process.exit(errors.length ? 1 : 0);

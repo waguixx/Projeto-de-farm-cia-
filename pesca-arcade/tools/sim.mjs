@@ -6,12 +6,13 @@ const arg = (k, d) => { const a = process.argv.find(x => x.startsWith('--' + k))
 const PERFIS = { casual: { lat: 260, erro: 26, toques: 5.5, pausa: 5 }, medio: { lat: 340, erro: 16, toques: 6.5, pausa: 4 }, bom: { lat: 460, erro: 8, toques: 8, pausa: 3 } };
 const perfil = arg('perfil', 'medio'), dias = +arg('dias', 14), ads = !!arg('anuncios', false), seeds = +arg('seeds', 3);
 const custos = arg('custos', '') ? String(arg('custos')).split(',').map(Number) : null, offEff = +arg('off', -1), quiet = !!arg('quiet', false);
+const evento = String(arg('evento', ''));
 const srv = await serve('dist');
 
 async function jogar(seed, start = null, opt = {}) {
   const { browser, page, errors } = await open(srv.url, { storage: start || '' , dsf: 1 });
-  const res = await page.evaluate(({ cfg, seed, dias, ads, opt, custos, offEff }) => {
-    const p = __pesca, G = p.G; window.__simMode = true;
+  const res = await page.evaluate(({ cfg, seed, dias, ads, opt, custos, offEff, evento }) => {
+    const p = __pesca, G = p.G; window.__simMode = true; window.__event = evento; // sem evento semanal por padrão, para o resultado não depender do dia em que o teste roda
     if (custos) custos.forEach((c, i) => { p.SCENES[i + 1].cost = c; });
     const OFF = offEff >= 0 ? offEff : (p.ECO ? p.ECO.offEff : 1), OFFH = p.ECO ? p.ECO.offHours : 4;
     let sd = seed >>> 0; const rnd = () => { sd = sd + 0x6D2B79F5 | 0; let t = Math.imul(sd ^ sd >>> 15, 1 | sd); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
@@ -23,11 +24,15 @@ async function jogar(seed, start = null, opt = {}) {
     const closeUi = () => { p.closeResult(); p.closePanel(); };
     let noise = 0, noiseT = 0;
     function cast() {
-      closeUi(); p.startCast(); if (G.phase === 'idle') return 0; let steps = 0, tapAcc = 0;
+      closeUi(); p.startCast(); if (G.phase === 'idle') return 0; let steps = 0, tapAcc = 0, lag = 0, react = 0;
       while (G.phase !== 'idle' && steps < 60 * 400) {
         steps++;
         if (G.rev > 0) { if (ads) document.getElementById('revyes').click(); else document.getElementById('revno').click(); continue; }
-        if (G.duel) { tapAcc += DT * cfg.toques * (0.85 + rnd() * 0.3); while (tapAcc >= 1 && G.duel) { tapAcc--; p.duelTap(); } p.update(DT); continue; }
+        if (G.duel) { const d = G.duel; // cada chefão pede uma habilidade diferente; o robô erra de vez em quando, como gente
+          if (d.k === 'mash' || (d.k === 'stopgo' && (d.ph === 'go' || (lag -= DT) > 0))) { if (d.ph === 'go') lag = 0.22; tapAcc += DT * cfg.toques * (0.85 + rnd() * 0.3); while (tapAcc >= 1 && G.duel) { tapAcc--; p.duelTap(); } }
+          else if (d.k === 'timing') { if (Math.abs(d.m - d.z) < d.hw * 0.75) { if (rnd() < 0.22) p.duelTap(); } else if (rnd() < 0.003 * (10 - cfg.toques)) p.duelTap(); }
+          else if (d.k === 'sides' && d.gap <= 0) { react += DT; if (react > 0.42 + cfg.erro / 100) { react = 0; p.duelTap(rnd() < 0.88 ? (d.side < 0 ? 0 : p.W) : (d.side < 0 ? p.W : 0)); } }
+          p.update(DT); continue; }
         // decide para onde levar o anzol
         const dir = G.phase === 'down' ? 1 : -1, full = G.caught.length >= p.cap(); let best = null, bs = -1e9, dodge = 0;
         for (const e of G.ents) {
@@ -72,17 +77,40 @@ async function jogar(seed, start = null, opt = {}) {
       for (let s = 0; s < 3 && !stop; s++) { const off = p.rate() * OFFH * 3600 * OFF; p.S.coins += off + p.chestAmt(); p.S.earned += off; shop(); stop = sessao(8); }
       snap('dia ' + day);
     }
-    return { marks, log, casts: p.S.casts, final: JSON.parse(JSON.stringify(p.S)), activeMin: activeT / 60 };
-  }, { cfg: PERFIS[perfil], seed, dias, ads, opt, custos, offEff });
+    return { marks, log, chefes: p.S.stats.bosses + '/' + (p.S.stats.bosses + p.S.stats.bossFail), conquistas: Object.keys(p.S.ach).length, casts: p.S.casts, final: JSON.parse(JSON.stringify(p.S)), activeMin: activeT / 60 };
+  }, { cfg: PERFIS[perfil], seed, dias, ads, opt, custos, offEff, evento });
   await browser.close();
   if (errors.length) console.log('ERROS:', errors.slice(0, 3));
   return res;
 }
 
+if (arg('chefes', false)) {
+  const { browser, page } = await open(srv.url, { storage: '', dsf: 1 });
+  for (const pf of Object.keys(PERFIS)) {
+    const r = await page.evaluate(({ cfg }) => { const p = __pesca, G = p.G; window.__simMode = true; window.__event = ''; p.S.mute = true; document.getElementById('splash').style.display = 'none';
+      let sd = 99; const rnd = () => { sd = sd + 0x6D2B79F5 | 0; let t = Math.imul(sd ^ sd >>> 15, 1 | sd); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; Math.random = rnd;
+      const out = {}, DT = 1 / 60;
+      for (let s = 0; s < 4; s++) { p.S.scene = s; p.S.tut = p.S.tut2 = true; let win = 0, secs = 0; const N = 40;
+        for (let i = 0; i < N; i++) { p.closeResult(); p.closePanel(); G.phase = 'idle'; p.genEnts(); p.startCast(); for (let k = 0; k < 30; k++) p.update(DT);
+          const b0 = p.S.stats.bosses, e = { kind: 'fish', def: p.SCENES[s].leg, legend: true, gold: false, val: 1, x: G.hx, y: G.hy + 30, vx: 0, base: 110, r: 30, ph: 0, z: 1, face: 1 }; G.ents.length = 0; G.ents.push(e); p.startDuel(e);
+          let tapAcc = 0, lag = 0, react = 0, n = 0;
+          while (G.duel && n++ < 60 * 30) { const d = G.duel;
+            if (d.k === 'mash' || (d.k === 'stopgo' && (d.ph === 'go' || (lag -= DT) > 0))) { if (d.ph === 'go') lag = 0.22; tapAcc += DT * cfg.toques * (0.85 + rnd() * 0.3); while (tapAcc >= 1 && G.duel) { tapAcc--; p.duelTap(); } }
+            else if (d.k === 'timing') { if (Math.abs(d.m - d.z) < d.hw * 0.75) { if (rnd() < 0.22) p.duelTap(); } else if (rnd() < 0.003 * (10 - cfg.toques)) p.duelTap(); }
+            else if (d.k === 'sides' && d.gap <= 0) { react += DT; if (react > 0.42 + cfg.erro / 100) { react = 0; p.duelTap(rnd() < 0.88 ? (d.side < 0 ? 0 : p.W) : (d.side < 0 ? p.W : 0)); } }
+            p.update(DT); }
+          secs += n * DT; if (p.S.stats.bosses > b0) win++; document.getElementById('revno').click(); G.phase = 'idle'; }
+        out[p.SCENES[s].leg.name] = Math.round(win / N * 100) + '% (' + (secs / N).toFixed(1) + ' s)'; }
+      return out; }, { cfg: PERFIS[pf] });
+    console.log('chefões, perfil', pf, JSON.stringify(r));
+  }
+  await browser.close(); srv.close(); process.exit(0);
+}
 const runs = []; for (let i = 0; i < seeds; i++) runs.push(await jogar(1234 + i * 77));
 const med = k => { const v = runs.map(r => r.marks[k]).filter(Boolean); if (!v.length) return 'não liberou em ' + dias + ' dias'; const a = v.map(x => x.min).sort((a, b) => a - b), d = v.map(x => x.dia).sort((a, b) => a - b); return `${a[Math.floor(a.length / 2)].toFixed(1)} min de jogo ativo (dia ${d[Math.floor(d.length / 2)]})  [${a.map(x => x.toFixed(0)).join(', ')}]`; };
 console.log(`\nPerfil "${perfil}"${ads ? ' + vê anúncios' : ''}, ${seeds} partidas, até ${dias} dias`);
 console.log('  Mar   :', med('mar')); console.log('  Gelo  :', med('gelo')); console.log('  Abismo:', med('abismo'));
+console.log('  chefões vencidos/encontrados:', runs.map(r => r.chefes).join(', '), '| conquistas:', runs.map(r => r.conquistas).join(', '));
 if (!quiet) console.table(runs[0].log);
 // Prestígio: recomeça com as pérolas ganhas ao liberar o Abismo/fim e mede o tempo até o Gelo de novo
 const f = runs[0].final, g = Math.floor(Math.sqrt((f.earned || 0) / (globalThis.PEARL_DIV || 40000)));
