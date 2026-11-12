@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0b84aa">
+<meta name="description" content="Pesca Arcade: fisgue os peixes, desvie dos perigos e explore quatro mares.">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icons/icon-192.png">
+<link rel="apple-touch-icon" href="./icons/icon-192.png">
+<title>Pesca Arcade</title>
+</head>
+<body>
+<div id="app">
+  <canvas id="c"></canvas>
+  <div id="hud">
+    <button id="coinbtn"><i class="coin"></i><span id="coins">0</span><span class="plus">+</span></button>
+    <span id="rate"></span>
+    <button class="ib" id="gift" data-ic="gift" aria-label="Presentes"><i class="dot" id="gdot"></i></button>
+    <button class="ib" id="desafio" data-ic="trophy" aria-label="Desafio e recordes"><i class="dot" id="ddot"></i></button>
+    <button class="ib" id="cfgbtn" data-ic="gear" aria-label="Ajustes"></button>
+  </div>
+  <div id="banner"></div>
+  <button id="pull">PUXAR!</button>
+  <button id="dbl"></button>
+  <div id="nav">
+    <button data-p="shop"><div class="ni" data-ic="shop"></div>Loja</button>
+    <button data-p="album"><div class="ni" data-ic="album"></div>Álbum</button>
+    <button data-p="missions"><div class="ni" data-ic="target"></div>Missões<i class="dot" id="mdot"></i></button>
+    <button data-p="scenes"><div class="ni" data-ic="map"></div>Mares</button>
+  </div>
+  <div id="modal"><div class="sheet"><header><h2 id="mtitle"></h2><button id="mclose">✕</button></header><div id="mbody"></div></div></div>
+  <div id="rev"><div class="revbox"><h2>A linha vai arrebentar!</h2><p id="revtxt"></p><div class="bar"><i id="revbar" style="width:100%;background:linear-gradient(#ffab91,#ff5722)"></i></div><button class="btn g big" id="revyes">Ver vídeo e salvar a pescaria</button><button class="btn gray big" id="revno">Desistir</button></div></div>
+  <div id="ad"><div class="adbox"><small>ANÚNCIO DE TESTE</small><p>Aqui entra o vídeo do anunciante quando o jogo for publicado como app.</p><b id="adn">3</b></div></div>
+  <div id="fade"></div>
+  <div id="result"><div class="rescard"><h2 id="restitle"></h2><div id="resfish"></div><div class="rescoins"><i class="coin"></i><b id="resval">0</b></div><div id="reschips"></div><div id="resmsgs"></div>
+    <div class="resbtns"><button class="btn p" id="resdbl"></button><button class="btn" id="resshare">Compartilhar</button><button class="btn g big" id="resok">Continuar</button></div></div></div>
+  <div id="toast"></div>
+  <div id="pause"><div class="revbox"><h2 style="color:#0b7fa3">Jogo pausado</h2><p>Sua pescaria está esperando.</p><button class="btn g big">Continuar</button></div></div>
+  <div id="splash"><div class="logo">PESCA<b>ARCADE</b></div><p>Fisgue os peixes e desvie dos perigos!</p><button id="play">JOGAR</button></div>
+</div>
+<script type="module" src="/src/main.ts"></script>
+</body>
+</html>

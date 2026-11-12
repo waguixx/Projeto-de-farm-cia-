@@ -1,0 +1,7 @@
+{
+  "appId": "com.pescaarcade.app",
+  "appName": "Pesca Arcade",
+  "webDir": "dist",
+  "backgroundColor": "#041520",
+  "android": { "allowMixedContent": false }
+}
