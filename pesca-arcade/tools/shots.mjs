@@ -29,12 +29,12 @@ for (let i = 0; i < 4; i++) {
   await ev(() => __pesca.goUp()); await wait(900); await shot(`5${i}-${seas[i]}-subida`);
   await page.waitForFunction(() => __pesca.G.phase === 'idle', null, { timeout: 60000 });
   await wait(900); if (i === 0) await shot('60-resultado');
-  await ev(() => { const r = document.getElementById('result'); if (r && r.classList.contains('on')) document.getElementById('resok').click(); __pesca.closePanel(); const d = document.getElementById('dbl'); if (d) d.style.display = 'none'; });
+  await ev(() => { __pesca.closeResult(); __pesca.closeResult(); __pesca.closePanel(); const d = document.getElementById('dbl'); if (d) d.style.display = 'none'; });
   await wait(300);
 }
 await ev(() => { __pesca.S.scene = 0; __pesca.genEnts(); });
 for (const p of ['shop', 'album', 'missions', 'scenes', 'coins', 'gift', 'desafio', 'conquistas', 'config']) {
-  const ok = await ev(p => { try { __pesca.openPanel(p); return document.getElementById('mbody').innerHTML.length > 20; } catch (e) { return false; } }, p);
+  const ok = await ev(p => { try { document.getElementById('mbody').innerHTML = ''; __pesca.openPanel(p); return document.getElementById('mbody').innerHTML.length > 20; } catch (e) { return false; } }, p);
   if (!ok) { await ev(() => __pesca.closePanel()); continue; }
   await wait(350); await shot(`7-menu-${p}`);
   if (p === 'album' || p === 'shop') { await ev(() => { const b = document.getElementById('mbody'); b.scrollTop = b.scrollHeight; }); await wait(250); await shot(`7-menu-${p}-fim`); }

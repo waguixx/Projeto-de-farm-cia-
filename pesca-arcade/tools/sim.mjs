@@ -20,7 +20,7 @@ async function jogar(seed, start = null, opt = {}) {
     p.S.mute = true; if (ads) p.S.noads = true;
     const DT = 1 / 60; let T = 0, activeT = 0; const log = [], marks = {};
     const idle = sec => { p.S.coins += p.rate() * sec; p.S.earned += p.rate() * sec; T += sec; activeT += sec; };
-    const closeUi = () => { const r = document.getElementById('result'); if (r && r.classList.contains('on')) { const b = document.getElementById('resok'); b && b.click(); } p.closePanel(); };
+    const closeUi = () => { p.closeResult(); p.closePanel(); };
     let noise = 0, noiseT = 0;
     function cast() {
       closeUi(); p.startCast(); if (G.phase === 'idle') return 0; let steps = 0, tapAcc = 0;
@@ -43,7 +43,7 @@ async function jogar(seed, start = null, opt = {}) {
         p.update(DT);
       }
       T += steps * DT; activeT += steps * DT;
-      const d = document.getElementById('dbl'); if (ads && d && d.style.display === 'block') { d.click(); idle(20); } else if (d) d.style.display = 'none';
+      const d = document.getElementById('resdbl'); if (ads && p.resOn && d && d.style.display !== 'none') { d.click(); idle(20); }
       closeUi(); return steps * DT;
     }
     function shop() {

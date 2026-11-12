@@ -1,6 +1,7 @@
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
 html,body{margin:0;height:100%;background:radial-gradient(circle at 50% 30%,#0b3a52,#020a12);font-family:Fredoka,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow:hidden;overscroll-behavior:none}
 #app{position:relative;height:100%;margin:0 auto;overflow:hidden;background:#3fb6c9}
+canvas#gl{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none}
 canvas#c{position:absolute;inset:0;width:100%;height:100%;touch-action:none;display:block}
 button{font-family:inherit;cursor:pointer;-webkit-appearance:none}
 .lf,#coinbtn,#nav button,.btn,.sheet h2,h3,#pull,#dbl,#play,.logo,.stat b,.days div{font-family:"Lilita One",Fredoka,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-weight:400}
@@ -91,3 +92,46 @@ textarea{width:100%;border-radius:12px;border:2px solid #cfe6ee;padding:8px;font
 
 /* a interface acompanha a escala do canvas em telas muito pequenas ou grandes */
 #hud,#nav,#banner,#pull,#dbl,.sheet,.revbox,.adbox,#splash>*{zoom:var(--s,1)}
+
+/* ===== tela de resultado ===== */
+#result{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(3,18,28,.58);z-index:6}
+#result.on{display:flex}
+.rescard{width:88%;max-width:340px;background:linear-gradient(#f3fbfe,#dff1f9);border-radius:26px;border:3px solid #fff;box-shadow:0 8px 0 #0b6a86,0 20px 44px rgba(0,0,0,.5);padding:0 14px 14px;text-align:center;animation:pop .3s cubic-bezier(.2,1.5,.4,1);zoom:var(--s,1)}
+@keyframes pop{from{transform:scale(.6);opacity:0}to{transform:none;opacity:1}}
+.rescard h2{margin:-20px auto 10px;display:inline-block;padding:8px 22px;border-radius:999px;background:linear-gradient(#2bb8dd,#0b84aa);color:#fff;font:400 22px "Lilita One",Fredoka,system-ui,sans-serif;border:3px solid #fff;box-shadow:0 4px 0 #0b6a86;text-shadow:0 2px 0 rgba(0,0,0,.25);letter-spacing:.5px}
+.rescard h2.gold{background:linear-gradient(#ffe36b,#ff9800);color:#4e2a00;box-shadow:0 4px 0 #b86a00;text-shadow:0 1px 0 rgba(255,255,255,.5)}
+#resfish{display:flex;flex-wrap:wrap;justify-content:center;gap:5px;min-height:40px}
+.rf{width:54px;height:36px;background:#fff;border-radius:10px;box-shadow:0 2px 0 #c6e2ec;animation:pop .32s both cubic-bezier(.2,1.6,.4,1);overflow:hidden}
+.rf canvas{width:100%;height:100%;display:block}
+.rf.g{background:linear-gradient(#fffbe6,#ffe39a);box-shadow:0 2px 0 #dcb44a}
+.rf.l{background:linear-gradient(#f1e6ff,#cdb1ff);box-shadow:0 2px 0 #8a5cff}
+.rf.more{display:flex;align-items:center;justify-content:center;font:400 16px "Lilita One",Fredoka,sans-serif;color:#0b7fa3}
+.rescoins{display:flex;align-items:center;justify-content:center;gap:8px;margin:10px 0 6px}
+.rescoins .coin{width:38px;height:38px}
+#resval{font:400 46px/1 "Lilita One",Fredoka,system-ui,sans-serif;color:#e08a00;text-shadow:0 3px 0 rgba(224,138,0,.22);transition:transform .12s;display:inline-block;min-width:60px}
+#resval.bump{transform:scale(1.2)}
+#reschips{display:flex;justify-content:center;gap:6px;flex-wrap:wrap}
+.chip{background:#fff;border-radius:999px;padding:4px 11px;font-size:13px;font-weight:700;color:#0b3a4a;box-shadow:0 2px 0 #c6e2ec}
+.chip.c{background:linear-gradient(#c8f6ff,#8be4f5)}
+#resmsgs{font-size:13px;font-weight:500;color:#33566a;line-height:1.45;margin:8px 0 2px}
+#resmsgs:empty{display:none}
+#resmsgs b{color:#0b7fa3}
+.resbtns{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.resbtns .btn{flex:1;font-size:15px}
+.resbtns .btn.big{flex-basis:100%;margin-top:0}
+#fade{position:absolute;inset:0;background:#041520;opacity:0;pointer-events:none;transition:opacity .2s;z-index:4}
+#fade.on{opacity:1}
+/* aviso de conquista */
+#toast{opacity:0;position:absolute;top:calc(62px + env(safe-area-inset-top,0px));left:50%;transform:translate(-50%,-220%);transition:transform .35s cubic-bezier(.2,1.4,.4,1);z-index:7;display:flex;align-items:center;gap:8px;background:linear-gradient(#fffbe6,#ffe39a);border:3px solid #fff;border-radius:18px;padding:7px 14px 7px 8px;box-shadow:0 4px 0 #dcb44a,0 10px 22px rgba(0,0,0,.35);color:#4e2a00;font-weight:700;font-size:13px;line-height:1.25;pointer-events:none;max-width:92%;zoom:var(--s,1)}
+#toast.on{transform:translate(-50%,0);opacity:1}
+#toast .ic{width:36px;height:36px;padding:4px}
+#toast b{display:block;font:400 16px "Lilita One",Fredoka,sans-serif}
+/* chave liga/desliga */
+.sw2{flex:none;width:56px;height:32px;min-height:44px;border-radius:999px;border:0;background:none;position:relative;padding:0}
+.sw2::before{content:"";position:absolute;left:0;right:0;top:6px;height:32px;border-radius:999px;background:#b9c9d0;box-shadow:inset 0 2px 4px rgba(0,0,0,.25);transition:background .15s}
+.sw2 i{position:absolute;top:9px;left:3px;width:26px;height:26px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.3);transition:transform .15s}
+.sw2.on::before{background:linear-gradient(#94ee96,#2e9e35)}
+.sw2.on i{transform:translateX(24px)}
+.note a{color:#0b7fa3}
+button:focus-visible{outline:3px solid #ffa000;outline-offset:2px}
+@media (prefers-reduced-motion:reduce){.logo,#play,.dot,#dbl{animation:none}}
